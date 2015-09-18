@@ -2,10 +2,10 @@
 # CSCI 3202
 # AI 3202
 
-For Manhattan heuristic:
+For Manhattan heuristic:<br/>
 	Usage: python Assignment3.py [filename] manhattan
 	
-For Diagonal heuristic:
+For Diagonal heuristic:<br/>
 	Usage: python Assignment3.py [filename] diagonal
 	
 
@@ -23,13 +23,13 @@ of vertical tiles to the goal. Therefore, by Pythagorean's theorem the diagonal
 distance will always be shorter than the sum of the two sides so this heuristic
 will give a better estimate and therefore give a more efficient search.
 
-Example:
-Using Manhattan distance on World1.txt:
-	Total Cost: 136
-	Evaluated Nodes: 70
-Using Diagonal distance on World1.txt:
-	Total Cost: 130
-	Evaluated Nodes: 53		
+Example:<br/>
+Using Manhattan distance on World1.txt:<br/>
+	Total Cost: 136<br/>
+	Evaluated Nodes: 70<br/>
+Using Diagonal distance on World1.txt:<br/>
+	Total Cost: 130<br/>
+	Evaluated Nodes: 53		<br/>
 
 This example shows that my heuristic found a path of shorter cost 
 and evaluated less nodes in the process proving that my diagonal 
