@@ -32,6 +32,6 @@ Using Diagonal distance on World1.txt:<br/>
 	Evaluated Nodes: 53		<br/>
 
 This example shows that my heuristic found a path of shorter cost 
-and evaluated less nodes in the process proving that my diagonal 
-distance heuristic function is more efficient in A star search algorithms
-than the Manhattan distance heuristic
+and evaluated less nodes in the process proving that the diagonal 
+distance heuristic function is more efficient in A star search 
+than the Manhattan distance heuristic function.
