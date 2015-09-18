@@ -8,7 +8,7 @@ For Manhattan heuristic:
 For Diagonal heuristic:
 	Usage: python Assignment3.py [filename] diagonal
 	
-'''
+
 My heuristic equation for this assignment is very simple.
 It counts the number of tiles that are diagonally in between the start and 
 the goal. If the starting tile is on the top of the graph then the heuristic
@@ -34,5 +34,4 @@ Using Diagonal distance on World1.txt:
 This example shows that my heuristic found a path of shorter cost 
 and evaluated less nodes in the process proving that my diagonal 
 distance heuristic function is more efficient in A star search algorithms
-than the Manhattan distance heuristic function 
-'''
+than the Manhattan distance heuristic
