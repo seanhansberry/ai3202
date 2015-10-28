@@ -252,7 +252,9 @@ def main():
 			else:
 				print "unhandled option:", option
 
+			print "My flag is", flag
 			current_node.option=flag
+			print "My current node is", current_node.name, current_node.option
 
 			conditional = bayes.calc_conditional(current_node, given)
 			print "Conditional probability for",current_node.name,"being",current_node.option ,"given",conditions,"is",conditional
@@ -602,7 +604,9 @@ def main():
 				else:
 					print "unhandled option:", option
 
+				print "My flag is", flag
 				current_node.option=flag
+				print "My current node is", current_node.name, current_node.option
 
 				conditional = bayes.calc_conditional(current_node, given)
 				print "Conditional probability for",current_node.name,"being",current_node.option ,"given",conditions,"is",conditional
@@ -859,7 +863,7 @@ class BayesNet():
 				print "Adding value to node:", node, value
 				return value
 
-	def calc_marginal(self, node, option=None):
+	def calc_marginal(self, node):
 		total = 0
 		numerator=0
 		denominator=0
@@ -875,13 +879,10 @@ class BayesNet():
 		else:
 			for parent in node.parents:
 				#Calc conditional for P(A|Parents(A)) P(A) = P(AB) = P(A/B)*P(B)
-				if option == None:
-					parent.option = True
-					total = total + self.calc_conditional(node, [parent])
-					parent.option = False
-					total = total + self.calc_conditional(node, [parent])
-				else:
-					total = total + self.calc_conditional(node, [parent])
+				parent.option = True
+				total = total + self.calc_conditional(node, [parent])
+				parent.option = False
+				total = total + self.calc_conditional(node, [parent])
 
 		return total
 
