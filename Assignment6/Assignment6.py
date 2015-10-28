@@ -225,11 +225,97 @@ def main():
 			print "flag", o
 			print "args", a
 
+			i=0
+			conditions = []
+			flag = 'true'
+			my_list = list(a)
+			for argument in my_list:
+				if i==0:
 
-			#Joint density for pollution smoking
-			bayes.get_joint(a)
-			joint_options = a
-			joint_flag = True
+					if argument == '~':
+
+						option = my_list[i+1]
+						flag='false'
+
+					else:
+						option = argument
+
+				else:
+					conditions.append(argument)
+
+				i=i+1
+
+
+			print "arg:", option, "conditions:",conditions
+
+			if option == "p":
+				current_node=bayes.find('pollution')
+
+			elif option == "s":
+				current_node=bayes.find('smoker')
+
+			elif option == "c":
+				current_node=bayes.find('cancer')
+
+			elif option == "x":
+				current_node=bayes.find('xray')
+
+			elif option == "d":
+				current_node = bayes.find('dyspnoea')
+
+			elif option == "~p":
+				current_node=bayes.find('pollution')
+				flag = 'false'
+
+			elif option == "~s":
+				current_node=bayes.find('smoker')
+				flag = 'false'
+
+			elif option == "~c":
+				current_node=bayes.find('cancer')
+				flag = 'false'
+
+			elif option == "~x":
+				current_node=bayes.find('xray')
+				flag = 'false'
+
+			elif option == "~d":
+				current_node = bayes.find('dyspnoea')
+				flag = 'false'
+
+			elif option == "P":
+					current_node=bayes.find('pollution')
+					flag='both'
+
+			elif option == "S":
+				current_node=bayes.find('smoker')
+				flag='both'
+
+			elif option == "C":
+				current_node=bayes.find('cancer')
+				flag='both'
+
+			elif option == "X":
+				current_node=bayes.find('xray')
+				flag='both'
+
+			elif option == "D":
+				current_node = bayes.find('dyspnoea')
+				flag='both'
+
+			else:
+				print "unhandled option:", option
+
+			if flag=='both':
+				joint1 = bayes.get_conditional(current_node, conditions, 'true')
+				joint2 = bayes.get_conditional(current_node, conditions, 'false')
+				print "Joint probability for",current_node.name ,"being true with",conditions,"is", joint1
+				print "Joint probability for",current_node.name ,"being false with",conditions,"is", joint2
+
+			else:
+				joint = bayes.get_joint(current_node, conditions, flag, option)
+				print "Joint probability for",current_node.name ,"being",flag,"with",conditions,"is", joint
+
 
 
 		else:
@@ -393,6 +479,7 @@ def main():
 				else:
 					print "unhandled option:", option
 
+
 				conditional = bayes.get_conditional(current_node, conditions, flag)
 				print "Conditional probability for",current_node.name ,"given",conditions,"is",conditional
 
@@ -402,15 +489,96 @@ def main():
 				print "flag", o
 				print "args", a
 
+				i=0
+				conditions = []
+				flag = 'true'
+				my_list = list(a)
+				for argument in my_list:
+					if i==0:
 
-				#Joint density for pollution smoking
-				bayes.get_joint(a)
-				joint_options = a
-				joint_flag = True
+						if argument == '~':
+
+							option = my_list[i+1]
+							flag='false'
+
+						else:
+							option = argument
+
+					else:
+						conditions.append(argument)
+
+					i=i+1
 
 
-			else:
-				assert False, "unhandled option"
+				print "arg:", option, "conditions:",conditions
+
+				if option == "p":
+					current_node=bayes.find('pollution')
+
+				elif option == "s":
+					current_node=bayes.find('smoker')
+
+				elif option == "c":
+					current_node=bayes.find('cancer')
+
+				elif option == "x":
+					current_node=bayes.find('xray')
+
+				elif option == "d":
+					current_node = bayes.find('dyspnoea')
+
+				elif option == "~p":
+					current_node=bayes.find('pollution')
+					flag = 'false'
+
+				elif option == "~s":
+					current_node=bayes.find('smoker')
+					flag = 'false'
+
+				elif option == "~c":
+					current_node=bayes.find('cancer')
+					flag = 'false'
+
+				elif option == "~x":
+					current_node=bayes.find('xray')
+					flag = 'false'
+
+				elif option == "~d":
+					current_node = bayes.find('dyspnoea')
+					flag = 'false'
+
+				elif option == "P":
+						current_node=bayes.find('pollution')
+						flag='both'
+
+				elif option == "S":
+					current_node=bayes.find('smoker')
+					flag='both'
+
+				elif option == "C":
+					current_node=bayes.find('cancer')
+					flag='both'
+
+				elif option == "X":
+					current_node=bayes.find('xray')
+					flag='both'
+
+				elif option == "D":
+					current_node = bayes.find('dyspnoea')
+					flag='both'
+
+				else:
+					print "unhandled option:", option
+
+				if flag=='both':
+					joint1 = bayes.get_conditional(current_node, conditions, 'true')
+					joint2 = bayes.get_conditional(current_node, conditions, 'false')
+					print "Joint probability for",current_node.name ,"being true with",conditions,"is", joint1
+					print "Joint probability for",current_node.name ,"being false with",conditions,"is", joint2
+
+				else:
+					joint = bayes.get_joint(current_node, conditions, flag, option)
+					print "Joint probability for",current_node.name ,"being",flag,"with",conditions,"is", joint
 
 
 
@@ -526,7 +694,7 @@ class BayesNet():
 			
 			for item, probability in node.info.items():
 				
-				print item, probability
+				#print item, probability
 
 				for element, number in probability.items():
 					
@@ -536,11 +704,11 @@ class BayesNet():
 
 					denominator = denominator + number
 
-			print "numerator for base node",node.name,"is:", numerator
+			#print "numerator for base node",node.name,"is:", numerator
 			value = numerator / denominator
 
 
-		print "Marginal for node", node.name, "is:", value
+		#print "Marginal for node", node.name, "is:", value
 		return value
 
 	def get_conditional(self, node, conditions, flag):
@@ -607,8 +775,11 @@ class BayesNet():
 					if item == word:
 						total = total + value
 						found=True
+
 				if not found:
+
 					total = total + self.calc_marginal(node, flag)
+
 				i=i+1
 		#print "P(A)",total
 		
@@ -645,19 +816,96 @@ class BayesNet():
 		return (total * sub_total) / denominator
 
 
-	def get_joint(self, options, want_probability="joint"):
+	def get_joint(self, node, options, flag, option):
 		
+		conditional = 1
+
 		joint = 0
-		valid_options = list(options)
-		#options = ['P','S','C','D','X','ps','pc','px','pd','psc','psx','psd','pcx','pxd','pscx','pscxd', 'p~s', 'p~c', 'p~x', 'p~d', 'ps~c', 'ps~x', 'ps~d', 'pc~x~', 'px~d', 'p~sc', 'p~sx', 'p~sd', 'p~cx', 'p~xd', 'p~s~c', 'p~s~x', 'p~s~d', 'p~c~x', 'p~x~d', 'p~scx', 'ps~cx', 'psc~x', 'p~s~cx', 'p~sc~x', 'ps~c~x', 'p~s~c~x', 'p~scxd', 'ps~cxd', 'psc~xd', 'pscx~d', 'p~s~cxd', 'p~sc~xd', 'p~scx~d', 'p~s~c~xd', 'p~sc~x~d', 'p~s~cx~d', 'p~s~c~x~d', '~ps','~pc','~px','~pd','~psc','~psx','~psd','~pcx','~pxd','~pscx','~pscxd', '~p~s', '~p~c', '~p~x', '~p~d', '~ps~c', '~ps~x', '~ps~d', '~pc~x~', '~px~d', '~p~sc', '~p~sx', '~p~sd', '~p~cx', '~p~xd', '~p~s~c', '~p~s~x', '~p~s~d', '~p~c~x', '~p~x~d', '~p~scx', '~ps~cx', '~psc~x', '~p~s~cx', '~p~sc~x', '~ps~c~x', '~p~s~c~x', '~p~scxd', '~ps~cxd', '~psc~xd', '~pscx~d', '~p~s~cxd', '~p~sc~xd', '~p~scx~d', '~p~s~c~xd', '~p~sc~x~d', '~p~s~cx~d', '~p~s~c~x~d']
+
+		conditionals = {}
+		for name in options:
+				
+			if name == "p":
+				pollution = self.find('pollution')
+				conditionals['true']=pollution
+			
+			elif name == "s":
+				smoker = self.find('smoker')
+				conditionals['true']=smoker
+
+			elif name == "c":
+				cancer = self.find('cancer')
+				conditionals['true']=cancer
+
+			elif name == "x":
+				xray = self.find('xray')
+				conditionals['true']=xray
+			
+			elif name == "d":
+				dyspnoea = self.find('dyspnoea')
+				conditionals['true']=dyspnoea
+			
+			elif name == "~p":
+				pollution = self.find('pollution')
+				conditionals['false']=pollution
+			
+			elif name == "~s":
+				smoker = self.find('smoker')
+				conditionals['false']=smoker			
+
+			elif name == "~c":
+				cancer = self.find('cancer')
+				conditionals['false']=cancer
+			
+			elif name == "~x":
+				xray = self.find('xray')
+				conditionals['false']=xray
+			
+			elif name == "~d":
+				dyspnoea = self.find('dyspnoea')
+				conditionals['false']=dyspnoea
+
+			if name == "P":
+				pollution = self.find('pollution')
+				conditionals['true']=pollution
+				condtionals['false']=pollution
+			
+			elif name == "S":
+				smoker = self.find('smoker')
+				conditionals['true']=smoker
+				condtionals['false']=smoker
+
+			elif name == "C":
+				cancer = self.find('cancer')
+				conditionals['true']=cancer
+				condtionals['false']=cancer
+
+			elif name == "X":
+				xray = self.find('xray')
+				conditionals['true']=xray
+				condtionals['false']=xray
+			
+			elif name == "D":
+				dyspnoea = self.find('dyspnoea')
+				conditionals['true']=dyspnoea
+				condtionals['false']=dyspnoea
+
+		#P(AB) = P(A|B)P(B) = P(B|A)P(A)
+		found=False
 		i=0
 
-		pollution = self.find('pollution')
-		smoker = self.find('smoker')
-		cancer = self.find('cancer')
-		xray = self.find('xray')
-		dyspnoea = self.find('dyspnoea')
-		
+		#P(A)
+		total = self.calc_marginal(node, flag)
+		#print "P(A):", total
+
+		#P(B|A)	
+		for prob_type, node in conditionals.items():
+			del options[0]
+			conditional = conditional * self.get_conditional(node, option, flag)
+	
+		return total * conditional
+
+
 
 
 if __name__ == "__main__":
