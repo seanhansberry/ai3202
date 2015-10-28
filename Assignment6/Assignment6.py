@@ -19,19 +19,6 @@ def main():
     bayes=BayesNet()
     bayes.initialize()
 
-    #First Test
-    #Should print out list of nodes in Bayes Net
-    #for node in bayes.network:
-    #	print node.name, node.info
-
-    #Second Test Update Element in List
-    #bayes.update('dyspnoea', 'marginal' , 'b|idgaf' ,0.2)
-    #bayes.update('dyspnoea', 'marginal', 'c|s,p', 0.5)
-    print "Passed 2-4"
-    print
-
-
-
     #Third Test Update the Priors if -p
     for o, a in opts:
 		
@@ -57,15 +44,15 @@ def main():
 			if a == "P":
 				#Set Pollution Prior
 				pollution = bayes.find('pollution')
-				pollution.info['low'] = value
-				pollution.info['high'] = 1-value
+				pollution.info[True][True] = value
+				pollution.info[False][False] = 1-value
 				print "Pollution Prior Set!:", float(value)
 
 			elif a == "S":
 				#Set Smoking Prior
 				smoker=bayes.find('smoker')
-				smoker.info['true'] = value
-				smoker.info['false'] = 1-value
+				smoker.info[True][True] = value
+				smoker.info[False][False] = 1-value
 				print "Smoker Prior Set!:", value
 
 			#setting the prior here works if the Bayes net is already built
@@ -74,9 +61,6 @@ def main():
 			print "flag", o
 			print "args", a
 
-			
-			#print "Unit test 2: Calculate marginal dyspnoea"
-			#print "..."
 			#print "Passed!"
 
 			#Should calculate marginal density for dyspnoea
@@ -125,16 +109,12 @@ def main():
 			#print "Calculating marginal for",current_node.name
 			
 			if false:
-				marginal = bayes.calc_marginal(current_node, 'false')
+				current_node.option = False
 			else:
-				marginal = bayes.calc_marginal(current_node, 'true')
-			
-			if false:
-				n_flag='false'
-			else:
-				n_flag='true'
+				current_node.option = True
 
-			print "Marginal for", current_node.name, "being", n_flag, "is:", marginal
+			marginal = bayes.calc_marginal(current_node)
+			print "Marginal probability for", current_node.name,"being",current_node.option,"is",marginal
 
 
 
@@ -157,15 +137,16 @@ def main():
 
 			i=0
 			conditions = []
-			flag = 'true'
+			flag = True
 			my_list = list(a)
 			for argument in my_list:
 				if i==0:
 
 					if argument == '~':
 
-						option = my_list[i+1]
-						flag='false'
+						option = '~' + my_list[i+1]
+						del my_list[i+1]
+						flag=False
 
 					else:
 						option = argument
@@ -175,8 +156,63 @@ def main():
 
 				i=i+1
 
+			
+			i=0
+			given = []
+			for item in conditions:
 
-			print "arg:", option, "conditions:",conditions
+				if item == '~':
+					
+					if conditions[i+1] == 'p':
+						bayes.find('pollution').option=False
+						given.append(bayes.find('pollution'))
+
+					elif conditions[i+1] == 's':
+						bayes.find('smoker').option=False
+						given.append(bayes.find('smoker'))
+
+					elif conditions[i+1] == 'c':
+						bayes.find('cancer').option=False
+						given.append(bayes.find('cancer'))
+
+					elif conditions[i+1] == 'd':
+						bayes.find('dyspnoea').option=False
+						given.append(bayes.find('dyspnoea'))
+
+					elif conditions[i+1] == 'x':
+						bayes.find('xray').option=False
+						given.append(bayes.find('xray'))
+
+				
+				elif item == 'p':
+					
+					given.append(bayes.find('pollution'))
+
+				elif item == 's':
+					
+					given.append(bayes.find('smoker'))
+
+				elif item == 'c':
+					
+					given.append(bayes.find('cancer'))
+
+				elif item == 'd':
+					
+					given.append(bayes.find('dyspnoea'))
+
+				elif item == 'x':
+					
+					given.append(bayes.find('xray'))
+
+				else:
+					print "Unhandled option", item
+
+				i += 1
+
+
+			print "arg:", option
+			for item in given:
+				print "given:", item.name, item.option
 
 			if option == "p":
 				current_node=bayes.find('pollution')
@@ -195,29 +231,31 @@ def main():
 
 			elif option == "~p":
 				current_node=bayes.find('pollution')
-				flag = 'false'
+				flag = False
 
 			elif option == "~s":
 				current_node=bayes.find('smoker')
-				flag = 'false'
+				flag = False
 
 			elif option == "~c":
 				current_node=bayes.find('cancer')
-				flag = 'false'
+				flag = False
 
 			elif option == "~x":
 				current_node=bayes.find('xray')
-				flag = 'false'
+				flag = False
 
 			elif option == "~d":
 				current_node = bayes.find('dyspnoea')
-				flag = 'false'
+				flag = False
 
 			else:
 				print "unhandled option:", option
 
-			conditional = bayes.get_conditional(current_node, conditions, flag)
-			print "Conditional probability for",current_node.name ,"given",conditions,"is",conditional
+			current_node.option=flag
+
+			conditional = bayes.calc_conditional(current_node, given)
+			print "Conditional probability for",current_node.name,"being",current_node.option ,"given",conditions,"is",conditional
 
 
 
@@ -225,11 +263,128 @@ def main():
 			print "flag", o
 			print "args", a
 
+			i=0
+			conditions = []
+			my_list = list(a)
+			for argument in my_list:
+				if i==0:
 
-			#Joint density for pollution smoking
-			bayes.get_joint(a)
-			joint_options = a
-			joint_flag = True
+					if argument == '~':
+
+						option = '~' + my_list[i+1]
+
+					else:
+						option = argument
+
+				else:
+					conditions.append(argument)
+
+				i=i+1
+
+			i=0
+			given = []
+			for item in conditions:
+
+				if item == '~':
+					
+					if conditions[i+1] == 'p':
+						bayes.find('pollution').option=False
+						given.append(bayes.find('pollution'))
+
+					elif conditions[i+1] == 's':
+						bayes.find('smoker').option=False
+						given.append(bayes.find('smoker'))
+
+					elif conditions[i+1] == 'c':
+						bayes.find('cancer').option=False
+						given.append(bayes.find('cancer'))
+
+					elif conditions[i+1] == 'd':
+						bayes.find('dyspnoea').option=False
+						given.append(bayes.find('dyspnoea'))
+
+					elif conditions[i+1] == 'x':
+						bayes.find('xray').option=False
+						given.append(bayes.find('xray'))
+
+				
+				elif item == 'p':
+					
+					given.append(bayes.find('pollution'))
+
+				elif item == 's':
+					
+					given.append(bayes.find('smoker'))
+
+				elif item == 'c':
+					
+					given.append(bayes.find('cancer'))
+
+				elif item == 'd':
+					
+					given.append(bayes.find('dyspnoea'))
+
+				elif item == 'x':
+					
+					given.append(bayes.find('xray'))
+
+				else:
+					print "Unhandled option", item
+
+				i += 1
+
+
+
+
+			print "arg:", option, "conditions:",conditions
+
+			if option == "p":
+				current_node=bayes.find('pollution')
+				current_node.option=True
+
+			elif option == "s":
+				current_node=bayes.find('smoker')
+				current_node.option=True
+
+			elif option == "c":
+				current_node=bayes.find('cancer')
+				current_node.option=True
+
+			elif option == "x":
+				current_node=bayes.find('xray')
+				current_node.option=True
+
+			elif option == "d":
+				current_node = bayes.find('dyspnoea')
+				current_node.option=True
+
+			elif option == "~p":
+				current_node=bayes.find('pollution')
+				current_node.option=False
+
+			elif option == "~s":
+				current_node=bayes.find('smoker')
+				current_node.option=False
+
+			elif option == "~c":
+				current_node=bayes.find('cancer')
+				current_node.option=False
+
+			elif option == "~x":
+				current_node=bayes.find('xray')
+				current_node.option=False
+
+			elif option == "~d":
+				current_node = bayes.find('dyspnoea')
+				current_node.option=False
+
+			else:
+				print "unhandled option:", option
+
+			
+			joint = bayes.calc_joint(current_node, given)
+			print "Joint probability for",current_node.name ,"being",current_node.option,"with",conditions,"is", joint
+
 
 
 		else:
@@ -253,15 +408,14 @@ def main():
 						j=j+1
 
 			if o in ("-m"):
-
-
 				print "flag", o
 				print "args", a
 
-			
-			
-			#Should calculate marginal density for dyspnoea
-			#Find marginal for args[counter]
+					#print "Passed!"
+
+					#Should calculate marginal density for dyspnoea
+					#Find marginal for args[counter]
+				print a
 				false=False
 				if a == "P":
 					current_node=bayes.find('pollution')
@@ -299,19 +453,18 @@ def main():
 
 				else:
 					print "unhandled option:", a
+
+
+			
+				#print "Calculating marginal for",current_node.name
 				
 				if false:
-					marginal = bayes.calc_marginal(current_node, 'false')
+					current_node.option = False
 				else:
-					marginal = bayes.calc_marginal(current_node, 'true')
-				
-				if false:
-					n_flag='false'
-				else:
-					n_flag='true'
+					current_node.option = True
 
-				print "Marginal for", current_node.name, "being", n_flag, "is:", marginal
-
+				marginal = bayes.calc_marginal(current_node)
+				print "Marginal probability for", current_node.name,"being",current_node.option,"is",marginal
 
 
 
@@ -334,15 +487,16 @@ def main():
 
 				i=0
 				conditions = []
-				flag = 'true'
+				flag = True
 				my_list = list(a)
 				for argument in my_list:
 					if i==0:
 
 						if argument == '~':
 
-							option = my_list[i+1]
-							flag='false'
+							option = '~' + my_list[i+1]
+							del my_list[i+1]
+							flag=False
 
 						else:
 							option = argument
@@ -352,8 +506,63 @@ def main():
 
 					i=i+1
 
+				
+				i=0
+				given = []
+				for item in conditions:
 
-				#print "arg:", option, "conditions:",conditions
+					if item == '~':
+						
+						if conditions[i+1] == 'p':
+							bayes.find('pollution').option=False
+							given.append(bayes.find('pollution'))
+
+						elif conditions[i+1] == 's':
+							bayes.find('smoker').option=False
+							given.append(bayes.find('smoker'))
+
+						elif conditions[i+1] == 'c':
+							bayes.find('cancer').option=False
+							given.append(bayes.find('cancer'))
+
+						elif conditions[i+1] == 'd':
+							bayes.find('dyspnoea').option=False
+							given.append(bayes.find('dyspnoea'))
+
+						elif conditions[i+1] == 'x':
+							bayes.find('xray').option=False
+							given.append(bayes.find('xray'))
+
+					
+					elif item == 'p':
+						
+						given.append(bayes.find('pollution'))
+
+					elif item == 's':
+						
+						given.append(bayes.find('smoker'))
+
+					elif item == 'c':
+						
+						given.append(bayes.find('cancer'))
+
+					elif item == 'd':
+						
+						given.append(bayes.find('dyspnoea'))
+
+					elif item == 'x':
+						
+						given.append(bayes.find('xray'))
+
+					else:
+						print "Unhandled option", item
+
+					i += 1
+
+
+				print "arg:", option
+				for item in given:
+					print "given:", item.name, item.option
 
 				if option == "p":
 					current_node=bayes.find('pollution')
@@ -372,29 +581,31 @@ def main():
 
 				elif option == "~p":
 					current_node=bayes.find('pollution')
-					flag = 'false'
+					flag = False
 
 				elif option == "~s":
 					current_node=bayes.find('smoker')
-					flag = 'false'
+					flag = False
 
 				elif option == "~c":
 					current_node=bayes.find('cancer')
-					flag = 'false'
+					flag = False
 
 				elif option == "~x":
 					current_node=bayes.find('xray')
-					flag = 'false'
+					flag = False
 
 				elif option == "~d":
 					current_node = bayes.find('dyspnoea')
-					flag = 'false'
+					flag = False
 
 				else:
 					print "unhandled option:", option
 
-				conditional = bayes.get_conditional(current_node, conditions, flag)
-				print "Conditional probability for",current_node.name ,"given",conditions,"is",conditional
+				current_node.option=flag
+
+				conditional = bayes.calc_conditional(current_node, given)
+				print "Conditional probability for",current_node.name,"being",current_node.option ,"given",conditions,"is",conditional
 
 
 
@@ -402,16 +613,132 @@ def main():
 				print "flag", o
 				print "args", a
 
+				i=0
+				conditions = []
+				my_list = list(a)
+				for argument in my_list:
+					if i==0:
 
-				#Joint density for pollution smoking
-				bayes.get_joint(a)
-				joint_options = a
-				joint_flag = True
+						if argument == '~':
+
+							option = '~' + my_list[i+1]
+
+						else:
+							option = argument
+
+					else:
+						conditions.append(argument)
+
+					i=i+1
+
+				i=0
+				given = []
+				for item in conditions:
+
+					if item == '~':
+						
+						if conditions[i+1] == 'p':
+							bayes.find('pollution').option=False
+							given.append(bayes.find('pollution'))
+
+						elif conditions[i+1] == 's':
+							bayes.find('smoker').option=False
+							given.append(bayes.find('smoker'))
+
+						elif conditions[i+1] == 'c':
+							bayes.find('cancer').option=False
+							given.append(bayes.find('cancer'))
+
+						elif conditions[i+1] == 'd':
+							bayes.find('dyspnoea').option=False
+							given.append(bayes.find('dyspnoea'))
+
+						elif conditions[i+1] == 'x':
+							bayes.find('xray').option=False
+							given.append(bayes.find('xray'))
+
+					
+					elif item == 'p':
+						
+						given.append(bayes.find('pollution'))
+
+					elif item == 's':
+						
+						given.append(bayes.find('smoker'))
+
+					elif item == 'c':
+						
+						given.append(bayes.find('cancer'))
+
+					elif item == 'd':
+						
+						given.append(bayes.find('dyspnoea'))
+
+					elif item == 'x':
+						
+						given.append(bayes.find('xray'))
+
+					else:
+						print "Unhandled option", item
+
+					i += 1
+
+
+
+
+				print "arg:", option, "conditions:",conditions
+
+				if option == "p":
+					current_node=bayes.find('pollution')
+					current_node.option=True
+
+				elif option == "s":
+					current_node=bayes.find('smoker')
+					current_node.option=True
+
+				elif option == "c":
+					current_node=bayes.find('cancer')
+					current_node.option=True
+
+				elif option == "x":
+					current_node=bayes.find('xray')
+					current_node.option=True
+
+				elif option == "d":
+					current_node = bayes.find('dyspnoea')
+					current_node.option=True
+
+				elif option == "~p":
+					current_node=bayes.find('pollution')
+					current_node.option=False
+
+				elif option == "~s":
+					current_node=bayes.find('smoker')
+					current_node.option=False
+
+				elif option == "~c":
+					current_node=bayes.find('cancer')
+					current_node.option=False
+
+				elif option == "~x":
+					current_node=bayes.find('xray')
+					current_node.option=False
+
+				elif option == "~d":
+					current_node = bayes.find('dyspnoea')
+					current_node.option=False
+
+				else:
+					print "unhandled option:", option
+
+				
+				joint = bayes.calc_joint(current_node, given)
+				print "Joint probability for",current_node.name ,"being",current_node.option,"with",conditions,"is", joint
+
 
 
 			else:
 				assert False, "unhandled option"
-
 
 
     # ...
@@ -420,20 +747,34 @@ class Node():
 	def __init__(self, name, info):
 		self.name = name
 		self.info = info
-		self.parent1=None
-		self.parent2=None
-		self.child1=None
-		self.child2=None
+		self.parents = []
+		self.children = []
+		self.option = True
 
-	def set_family(self, parent1 , parent2, child1, child2):
-		self.parent1=parent1
-		self.parent2=parent2
-		self.child1=child1
-		self.child2=child2
+	def set_parents(self, parents):
+		for parent in parents:
+
+			self.parents.append(parent)
+
+	def set_children(self, children):
+		for child in children:
+
+			self.children.append(child)
 
 class BayesNet():
 	def __init__(self):
 		self.network = []
+		self.dgivenc=0.65
+		self.dgivennc=0.30
+		self.xgivenc=0.9
+		self.xgivennc=0.2
+		self.cgivennps=0.05
+		self.cgivennpns=0.02
+		self.cgivenps=0.03
+		self.cgivenpns=0.001
+		self.npollution=0.9
+		self.psmoker=0.3
+
 
 	def find(self, node):
 		for item in self.network:
@@ -443,11 +784,11 @@ class BayesNet():
 		print "Node not Found!:", node
 
 	def initialize(self):
-		self.network.append(Node('pollution', {'true' : 0.9, 'false' : 0.1}))
-		self.network.append(Node('smoker', { 'true' : 0.3, 'false' : 0.7}))
-		self.network.append(Node('cancer', { 'true': {'ps' : 0.05, 'p~s': 0.02, '~pS': 0.03, '~p~s': 0.001}, 'false' : {'ps' : 0.95, 'p~s': 0.98, '~pS': 0.97, '~p~s': 0.999}}))
-		self.network.append(Node('dyspnoea', { 'true' : {'c' : 0.65, '~c': 0.30}, 'false' : {'c' : 0.35, '~c': 0.70}}))
-		self.network.append(Node('xray', { 'true' : {'c' : 0.90, '~c': 0.20}, 'false' : {'c' : 0.10, '~c': 0.80}}))
+		self.network.append(Node('pollution', {True : {True : 0.9}, False : {False : 0.1}}))
+		self.network.append(Node('smoker', { True : {True : 0.3}, False : {False : 0.7}}))
+		self.network.append(Node('cancer', { True: {'ps' : 0.05, 'p~s': 0.02, '~ps': 0.03, '~p~s': 0.001}, False : {'ps' : 0.95, 'p~s': 0.98, '~ps': 0.97, '~p~s': 0.999}}))
+		self.network.append(Node('dyspnoea', { True : {'c' : 0.65, '~c': 0.30}, False : {'c' : 0.35, '~c': 0.70}}))
+		self.network.append(Node('xray', { True : {'c' : 0.90, '~c': 0.20}, False : {'c' : 0.10, '~c': 0.80}}))
 		
 
 		pollution=self.find('pollution')
@@ -456,12 +797,27 @@ class BayesNet():
 		dyspnoea=self.find('dyspnoea')
 		xray=self.find('xray')
 
-		pollution.set_family(None, None, cancer, None) 
-		smoker.set_family(None, None, cancer, None)
-		cancer.set_family(pollution, smoker, dyspnoea, xray)
-		dyspnoea.set_family(cancer, None, None, None)
-		xray.set_family(cancer, None, None, None)
+		children = []
+		parents = []
 
+		children.append(cancer)
+
+		pollution.set_children(children)
+		smoker.set_children(children)
+
+		parents.append(pollution)
+		parents.append(smoker)
+
+		xray.set_parents(children)
+		dyspnoea.set_parents(children)
+
+		children.pop()
+
+		children.append(dyspnoea)
+		children.append(xray)
+
+		cancer.set_parents(parents)
+		cancer.set_children(children)
 
 		print "Bayes Net Initialized!"
 		print
@@ -503,161 +859,538 @@ class BayesNet():
 				print "Adding value to node:", node, value
 				return value
 
-	def calc_marginal(self, node, option):
-		
+	def calc_marginal(self, node, option=None):
+		total = 0
 		numerator=0
 		denominator=0
 
 		#Base Case
+		#P(A) = P(A|parents(A))
 
-		if node.parent1 == None:
-			
-			for item, probability in node.info.items():
+		if len(node.parents) == 0:
+			#No parents return A
+			return node.info[node.option][node.option]
 
-				if item == option:
-
-					numerator = numerator + probability
-
-				denominator = denominator + probability
-
-			value = numerator / denominator
 
 		else:
-			
-			for item, probability in node.info.items():
-				
-				print item, probability
+			for parent in node.parents:
+				#Calc conditional for P(A|Parents(A)) P(A) = P(AB) = P(A/B)*P(B)
+				if option == None:
+					parent.option = True
+					total = total + self.calc_conditional(node, [parent])
+					parent.option = False
+					total = total + self.calc_conditional(node, [parent])
+				else:
+					total = total + self.calc_conditional(node, [parent])
 
-				for element, number in probability.items():
-					
-					if item == option:
-
-						numerator = numerator + number
-
-					denominator = denominator + number
-
-			print "numerator for base node",node.name,"is:", numerator
-			value = numerator / denominator
+		return total
 
 
-		print "Marginal for node", node.name, "is:", value
-		return value
-
-	def get_conditional(self, node, conditions, flag):
+	def calc_conditional(self, node, given, option_flag=None):
 		
-		start_node = node
 		total = 0
-		sub_total = 0
-		denominator = 0
 
-		conditionals = {}
-		for name in conditions:
-				
-			if name == "p":
-				pollution = self.find('pollution')
-				conditionals['true']=pollution
-			
-			elif name == "s":
-				smoker = self.find('smoker')
-				conditionals['true']=smoker
-
-			elif name == "c":
-				cancer = self.find('cancer')
-				conditionals['true']=cancer
-
-			elif name == "x":
-				xray = self.find('xray')
-				conditionals['true']=xray
-			
-			elif name == "d":
-				dyspnoea = self.find('dyspnoea')
-				conditionals['true']=dyspnoea
-			
-			elif name == "~p":
-				pollution = self.find('pollution')
-				conditionals['false']=pollution
-			
-			elif name == "~s":
-				smoker = self.find('smoker')
-				conditionals['false']=smoker			
-
-			elif name == "~c":
-				cancer = self.find('cancer')
-				conditionals['false']=cancer
-			
-			elif name == "~x":
-				xray = self.find('xray')
-				conditionals['false']=xray
-			
-			elif name == "~d":
-				dyspnoea = self.find('dyspnoea')
-				conditionals['false']=dyspnoea
-
-		found=False
-		i=0
-		if node.parent1 is None:
-
-			total = node.info[flag]
-
-		else:
-		#P(A)	
-			for item, value in node.info[flag].items():
-				#print "item:",item,"value:",value
-				for word in conditions:
-					if item == word:
-						total = total + value
-						found=True
-				if not found:
-					total = total + self.calc_marginal(node, flag)
-				i=i+1
-		#print "P(A)",total
-		
-		for prob_type, node in conditionals.items():
-		#P(B|A)
-			if node.parent1 is None:
-
-				sub_total = sub_total + node.info[prob_type]
-
-			else:
-				for element, probabilities in node.info[prob_type].items():
-				
-					#print element, probabilities
-					
-					sub_total = sub_total + probabilities
+		# Node / parent
+		#P(A/B) = P(AB)/P(B)
+		#P(A/B) = P(Ab)/P(b)+P(A~b)/P(~b)
+		parent_found=False
+		child_found = False
 
 
-		#print "P(B|A):",sub_total
-		#print "Conditionals:", conditions
+		pollution=self.find('pollution')
+		smoker=self.find('smoker')
+		cancer=self.find('cancer')
+		dyspnoea=self.find('dyspnoea')
+		xray=self.find('xray')
+
+		#P(C/s)
+		#Given is parent
+		#P(C/S)
+		for item in given:
 
 
-		for prob_type, cur_node in conditionals.items():
-		#P(B)
-			for item, probability in cur_node.info.items():
-				if item == prob_type:
-					if cur_node.parent1 is None:
-						denominator = probability
+			for parent in node.parents:
+
+				if parent == item:
+					parent_found=True
+					if parent == cancer:
+
+						if node == dyspnoea:
+
+							if node.option:
+
+								if parent.option:
+									total = total + self.dgivenc * self.calc_marginal(cancer)
+								else:
+									total = total + self.dgivennc * self.calc_marginal(cancer)
+
+							else:
+
+								if parent.option:
+									total = total + (1-self.dgivenc) * self.calc_marginal(cancer)
+								else:
+									total = total + (1-self.dgivennc) * self.calc_marginal(cancer)
+
+						else:
+							#xray
+							if node.option:
+
+								if parent.option:
+									total = total + self.xgivenc * self.calc_marginal(cancer)
+								else:
+									total = total + self.xgivennc * self.calc_marginal(cancer)
+
+							else:
+							
+								if parent.option:
+									total = total + (1-self.xgivenc) * self.calc_marginal(cancer)
+								else:
+									total = total + (1-self.xgivennc) * self.calc_marginal(cancer)
+
+					elif parent == pollution:
+
+						if node.option:
+							#node true
+							if parent.option:
+								#parent true
+								if option_flag is True:
+
+									total = total + self.cgivenps * self.calc_marginal(pollution)*self.calc_marginal(smoker)
+								
+								elif option_flag is False:
+
+									smoker.option = False
+									total = total + self.cgivenpns * self.calc_marginal(pollution)*self.calc_marginal(smoker)
+
+								else:
+									total = total + self.cgivenps * self.calc_marginal(pollution)*self.calc_marginal(smoker)
+									smoker.option = False
+									total = total + self.cgivenpns * self.calc_marginal(pollution)*self.calc_marginal(smoker)
+							else:
+								if option_flag:
+
+									total = total + self.cgivennps * self.calc_marginal(pollution)*self.calc_marginal(smoker)
+								
+								elif option_flag is False:
+
+									smoker.option = False
+									total = total + self.cgivennpns * self.calc_marginal(pollution)*self.calc_marginal(smoker)
+
+								else:
+
+									total = total + self.cgivennps * self.calc_marginal(pollution)*self.calc_marginal(smoker)									
+									smoker.option = False
+									total = total + self.cgivennpns * self.calc_marginal(pollution)*self.calc_marginal(smoker)
+
+						else:
+
+							if parent.option:
+
+								if option_flag:
+
+									total = total + (1-self.cgivenps) * self.calc_marginal(pollution)*self.calc_marginal(smoker)
+	
+								elif option_flag is False:
+									smoker.option = False
+									total = total + (1-self.cgivenpns) * self.calc_marginal(pollution)*self.calc_marginal(smoker)
+
+								else:
+									total = total + (1-self.cgivenps) * self.calc_marginal(pollution)*self.calc_marginal(smoker)
+									smoker.option = False
+									total = total + (1-self.cgivenpns) * self.calc_marginal(pollution)*self.calc_marginal(smoker)
+
+							else:
+
+								if option_flag:
+									total = total + (1-self.cgivennps) * self.calc_marginal(pollution)*self.calc_marginal(smoker)
+								
+								elif option_flag is False:
+
+									smoker.option = False
+									total = total + (1-self.cgivennpns) * self.calc_marginal(pollution)*self.calc_marginal(smoker)
+								else:
+									total = total + (1-self.cgivennps) * self.calc_marginal(pollution)*self.calc_marginal(smoker)
+									smoker.option = False
+									total = total + (1-self.cgivennpns) * self.calc_marginal(pollution)*self.calc_marginal(smoker)
+					else:
+						#smoker
+						if node.option:
+							#cancer
+							if parent.option:
+
+								if option_flag:
+									total = total + self.cgivenps * self.calc_marginal(pollution) * self.calc_marginal(smoker)
+								elif option_flag is False:
+									pollution.option=False
+									total = total + self.cgivennps * self.calc_marginal(pollution) * self.calc_marginal(smoker)
+
+							else:
+								if option_flag:
+
+									total = total + self.cgivenpns * self.calc_marginal(pollution) * self.calc_marginal(smoker)
+								
+								elif option_flag is False:
+									pollution.option=False
+									total = total + self.cgivennpns * self.calc_marginal(pollution) * self.calc_marginal(smoker)
+								else:
+									total = total + self.cgivenps * self.calc_marginal(pollution) * self.calc_marginal(smoker)
+									pollution.option=False
+									total = total + self.cgivennps * self.calc_marginal(pollution) * self.calc_marginal(smoker)
+
+						else:
+							#~cancer
+							if parent.option:
+								
+								if option_flag:
+									total = total + (1-self.cgivenps) * self.calc_marginal(pollution) * self.calc_marginal(smoker)
+								elif option_flag is False:
+									pollution.option=False
+									total = total + (1-self.cgivennps) * self.calc_marginal(pollution) * self.calc_marginal(smoker)
+								else:
+									total = total + (1-self.cgivenps) * self.calc_marginal(pollution) * self.calc_marginal(smoker)
+									pollution.option=False
+									total = total + (1-self.cgivennps) * self.calc_marginal(pollution) * self.calc_marginal(smoker)
+
+							else:
+								if option_flag:
+									total = total + (1-self.cgivenpns) * self.calc_marginal(pollution) * self.calc_marginal(smoker)
+								elif option_flag is False:
+									pollution.option=False
+									total = total + (1-self.cgivennpns) * self.calc_marginal(pollution) * self.calc_marginal(smoker)
+								else:
+									total = total + (1-self.cgivenpns) * self.calc_marginal(pollution) * self.calc_marginal(smoker)
+									pollution.option=False
+									total = total + (1-self.cgivennpns) * self.calc_marginal(pollution) * self.calc_marginal(smoker)
+
+
+			#given is child P(A/B) = P(B) * P(B/A)
+			for child in node.children:
+
+				if child == item:
+					child_found=True
+					if child == cancer:
+
+						if node == pollution:
+								
+							if node.option:
+								
+								if child.option:
+									
+									if option_flag:
+
+										total = total + self.cgivenps * self.calc_marginal(pollution) * self.calc_marginal(smoker) * self.calc_marginal(cancer)
+									elif option_flag is False:
+										smoker.option = False
+										total = total + self.cgivenpns * self.calc_marginal(pollution) * self.calc_marginal(smoker) * self.calc_marginal(cancer)
+									else:
+										total = total + self.cgivenps * self.calc_marginal(pollution) * self.calc_marginal(smoker) * self.calc_marginal(cancer)
+										smoker.option = False
+										total = total + self.cgivenpns * self.calc_marginal(pollution) * self.calc_marginal(smoker) * self.calc_marginal(cancer)
+								
+								else:
+									if option_flag:
+										total = total + (1-self.cgivenps) * self.calc_marginal(pollution) * self.calc_marginal(smoker) * self.calc_marginal(cancer)
+									elif option_flag is False:
+										smoker.option = False
+										total = total + (1-self.cgivenpns) * self.calc_marginal(pollution) * self.calc_marginal(smoker) * self.calc_marginal(cancer)
+									else:
+										total = total + (1-self.cgivenps) * self.calc_marginal(pollution) * self.calc_marginal(smoker) * self.calc_marginal(cancer)
+										smoker.option = False
+										total = total + (1-self.cgivenpns) * self.calc_marginal(pollution) * self.calc_marginal(smoker) * self.calc_marginal(cancer)
+							else:
+								
+								if child.option:
+								
+									if option_flag:
+										total = total + self.cgivennps * self.calc_marginal(pollution) * self.calc_marginal(smoker) * self.calc_marginal(cancer)
+									elif option_flag is False:
+										smoker.option = False
+										total = total + self.cgivennpns * self.calc_marginal(pollution) * self.calc_marginal(smoker) * self.calc_marginal(cancer)
+									else:
+										total = total + self.cgivennps * self.calc_marginal(pollution) * self.calc_marginal(smoker) * self.calc_marginal(cancer)
+										smoker.option = False
+										total = total + self.cgivennpns * self.calc_marginal(pollution) * self.calc_marginal(smoker) * self.calc_marginal(cancer)
+								
+								else:
+
+									if option_flag:
+
+										total = total + (1-self.cgivennps) * self.calc_marginal(pollution) * self.calc_marginal(smoker) * self.calc_marginal(cancer)
+									elif option_flag is False:
+										smoker.option = False
+										total = total + (1-self.cgivennpns) * self.calc_marginal(pollution) * self.calc_marginal(smoker) * self.calc_marginal(cancer)
+									else:
+										total = total + (1-self.cgivennps) * self.calc_marginal(pollution) * self.calc_marginal(smoker) * self.calc_marginal(cancer)
+										smoker.option = False
+										total = total + (1-self.cgivennpns) * self.calc_marginal(pollution) * self.calc_marginal(smoker) * self.calc_marginal(cancer)
+
+
+						else:
+							#smoker
+							if node.option:
+
+								if child.option:
+										
+									if option_flag:
+
+										total = total + self.cgivenps * self.calc_marginal(pollution) * self.calc_marginal(smoker) * self.calc_marginal(cancer)
+									elif option_flag is False:
+										pollution.option = False
+										total = total + self.cgivennps * self.calc_marginal(pollution) * self.calc_marginal(smoker) * self.calc_marginal(cancer)
+									else:
+										total = total + self.cgivenps * self.calc_marginal(pollution) * self.calc_marginal(smoker) * self.calc_marginal(cancer)
+										pollution.option = False
+										total = total + self.cgivennps * self.calc_marginal(pollution) * self.calc_marginal(smoker) * self.calc_marginal(cancer)
+
+								else:
+
+									if option_flag:
+										total = total + (1-self.cgivenps) * self.calc_marginal(pollution) * self.calc_marginal(smoker) * self.calc_marginal(cancer)
+									elif option_flag is False:
+										pollution.option = False
+										total = total + (1-self.cgivennps) * self.calc_marginal(pollution) * self.calc_marginal(smoker) * self.calc_marginal(cancer)
+									else:
+										total = total + (1-self.cgivenps) * self.calc_marginal(pollution) * self.calc_marginal(smoker) * self.calc_marginal(cancer)
+										pollution.option = False
+										total = total + (1-self.cgivennps) * self.calc_marginal(pollution) * self.calc_marginal(smoker) * self.calc_marginal(cancer)
+
+
+							else:
+
+								if child.option:
+									
+									if option_flag:
+										total = total + self.cgivenpns * self.calc_marginal(pollution) * self.calc_marginal(smoker) * self.calc_marginal(cancer)
+									elif option_flag is False:
+										pollution.option = False
+										total = total + self.cgivennpns * self.calc_marginal(pollution) * self.calc_marginal(smoker) * self.calc_marginal(cancer)
+									else:
+										total = total + self.cgivenpns * self.calc_marginal(pollution) * self.calc_marginal(smoker) * self.calc_marginal(cancer)
+										pollution.option = False
+										total = total + self.cgivennpns * self.calc_marginal(pollution) * self.calc_marginal(smoker) * self.calc_marginal(cancer)
+
+
+								else:
+									if option_flag:
+
+										total = total + (1-self.cgivenpns) * self.calc_marginal(pollution) * self.calc_marginal(smoker) * self.calc_marginal(cancer)
+									
+									elif option_flag is False:
+										pollution.option = False
+										total = total + (1-self.cgivennpns) * self.calc_marginal(pollution) * self.calc_marginal(smoker) * self.calc_marginal(cancer)
+
+									else:
+
+										total = total + (1-self.cgivenpns) * self.calc_marginal(pollution) * self.calc_marginal(smoker) * self.calc_marginal(cancer)
+										pollution.option = False
+										total = total + (1-self.cgivennpns) * self.calc_marginal(pollution) * self.calc_marginal(smoker) * self.calc_marginal(cancer)
+
+
+					elif child == dyspnoea:
+
+						if node.option:
+
+							if child.option:
+								#P(C/d)=P(d)*P(d/C)
+								#P(A/B)=P(B)*P(B/A)
+								total = total + self.dgivenc * self.calc_marginal(dyspnoea)
+							else:
+
+								total = total + self.dgivennc * self.calc.marginal(dyspnoea)
+
+						else:
+
+							if child.option:
+
+								total = total + (1-self.dgivenc) * self.calc_marginal(dyspnoea)
+							else:
+
+								total = total + (1-self.dgivennc) * self.calc.marginal(dyspnoea)
 
 					else:
-						for element, value in cur_node.info[prob_type].items():
-							denominator = denominator + value
+						#xray
+						if node.option:
 
-	
-		return (total * sub_total) / denominator
+							if child.option:
+
+								total = total + self.xgivenc * self.calc_marginal(xray)
+							else:
+
+								total = total + self.xgivennc * self.calc.marginal(xray)
+
+						else:
+
+							if child.option:
+
+								total = total + (1-self.xgivenc) * self.calc_marginal(xray)
+							else:
+
+								total = total + (1-self.xgivennc) * self.calc.marginal(xray)
 
 
-	def get_joint(self, options, want_probability="joint"):
+		#Given is not parent or child (independent)
+			if child_found is not True and parent_found is not True:
+				total = total + self.calc_marginal(node) * self.calc_marginal(parent)
+
+		#print "Conditional probability for",node.name,"being",node.option, "given", given.name,"being",given.option,"is",total
+		return total
+
+
+
+		# Node / child
+		#P(A/B) = P(B) * P(B/A)	
+
 		
+		# Node / Node
+		#P(A/B) = P(A)P(B)
+
+
+	def calc_joint(self, node, args):
+		total=0
+
+		#if not parent or child independent
+		#P(AB) = P(A)*P(B)
+
+		#else
+		#P(AB) = P(B)*P(A|B)
+
+		child_found = False
+		parent_found = False
 		joint = 0
-		valid_options = list(options)
-		#options = ['P','S','C','D','X','ps','pc','px','pd','psc','psx','psd','pcx','pxd','pscx','pscxd', 'p~s', 'p~c', 'p~x', 'p~d', 'ps~c', 'ps~x', 'ps~d', 'pc~x~', 'px~d', 'p~sc', 'p~sx', 'p~sd', 'p~cx', 'p~xd', 'p~s~c', 'p~s~x', 'p~s~d', 'p~c~x', 'p~x~d', 'p~scx', 'ps~cx', 'psc~x', 'p~s~cx', 'p~sc~x', 'ps~c~x', 'p~s~c~x', 'p~scxd', 'ps~cxd', 'psc~xd', 'pscx~d', 'p~s~cxd', 'p~sc~xd', 'p~scx~d', 'p~s~c~xd', 'p~sc~x~d', 'p~s~cx~d', 'p~s~c~x~d', '~ps','~pc','~px','~pd','~psc','~psx','~psd','~pcx','~pxd','~pscx','~pscxd', '~p~s', '~p~c', '~p~x', '~p~d', '~ps~c', '~ps~x', '~ps~d', '~pc~x~', '~px~d', '~p~sc', '~p~sx', '~p~sd', '~p~cx', '~p~xd', '~p~s~c', '~p~s~x', '~p~s~d', '~p~c~x', '~p~x~d', '~p~scx', '~ps~cx', '~psc~x', '~p~s~cx', '~p~sc~x', '~ps~c~x', '~p~s~c~x', '~p~scxd', '~ps~cxd', '~psc~xd', '~pscx~d', '~p~s~cxd', '~p~sc~xd', '~p~scx~d', '~p~s~c~xd', '~p~sc~x~d', '~p~s~cx~d', '~p~s~c~x~d']
-		i=0
 
-		pollution = self.find('pollution')
-		smoker = self.find('smoker')
-		cancer = self.find('cancer')
-		xray = self.find('xray')
-		dyspnoea = self.find('dyspnoea')
+		pollution=self.find('pollution')
+		smoker=self.find('smoker')
+		cancer=self.find('cancer')
+		dyspnoea=self.find('dyspnoea')
+		xray=self.find('xray')
+
+		if len(args) > 1:
+			option_flag = args[1].option
+
 		
+		for item in args:
+
+			for parent in node.parents:
+
+				if parent == item:
+					parent_found=True
+
+					total = total + self.calc_conditional(node, parent, option_flag) * self.calc_marginal(parent)
+					
+
+			#given is child P(AB) = P(B/A) * P(A)
+			for child in node.children:
+
+				if child == item:
+					child_found=True
+					if child == cancer:
+
+						if node == pollution:
+								
+							if node.option:
+								
+								if child.option:
+								
+									total = total + self.cgivenps * self.calc_marginal(pollution) * self.calc_marginal(smoker) * self.calc_marginal(cancer)
+									smoker.option = False
+									total = total + self.cgivenpns * self.calc_marginal(pollution) * self.calc_marginal(smoker) * self.calc_marginal(cancer)
+								
+								else:
+									total = total + (1-self.cgivenps) * self.calc_marginal(pollution) * self.calc_marginal(smoker) * self.calc_marginal(cancer)
+									smoker.option = False
+									total = total + (1-self.cgivenpns) * self.calc_marginal(pollution) * self.calc_marginal(smoker) * self.calc_marginal(cancer)
+							else:
+								
+								if child.option:
+								
+									total = total + self.cgivennps * self.calc_marginal(pollution) * self.calc_marginal(smoker) * self.calc_marginal(cancer)
+									smoker.option = False
+									total = total + self.cgivennpns * self.calc_marginal(pollution) * self.calc_marginal(smoker) * self.calc_marginal(cancer)
+								
+								else:
+									total = total + (1-self.cgivennps) * self.calc_marginal(pollution) * self.calc_marginal(smoker) * self.calc_marginal(cancer)
+									smoker.option = False
+									total = total + (1-self.cgivennpns) * self.calc_marginal(pollution) * self.calc_marginal(smoker) * self.calc_marginal(cancer)
+
+
+						else:
+							#smoker
+							if node.option:
+
+								if child.option:
+									
+									total = total + self.cgivenps * self.calc_marginal(pollution) * self.calc_marginal(smoker) * self.calc_marginal(cancer)
+									pollution.option = False
+									total = total + self.cgivennps * self.calc_marginal(pollution) * self.calc_marginal(smoker) * self.calc_marginal(cancer)
+
+								else:
+
+									total = total + (1-self.cgivenps) * self.calc_marginal(pollution) * self.calc_marginal(smoker) * self.calc_marginal(cancer)
+									pollution.option = False
+									total = total + (1-self.cgivennps) * self.calc_marginal(pollution) * self.calc_marginal(smoker) * self.calc_marginal(cancer)
+
+
+							else:
+
+								if child.option:
+									
+									total = total + self.cgivenpns * self.calc_marginal(pollution) * self.calc_marginal(smoker) * self.calc_marginal(cancer)
+									pollution.option = False
+									total = total + self.cgivennpns * self.calc_marginal(pollution) * self.calc_marginal(smoker) * self.calc_marginal(cancer)
+
+								else:
+
+									total = total + (1-self.cgivenpns) * self.calc_marginal(pollution) * self.calc_marginal(smoker) * self.calc_marginal(cancer)
+									pollution.option = False
+									total = total + (1-self.cgivennpns) * self.calc_marginal(pollution) * self.calc_marginal(smoker) * self.calc_marginal(cancer)
+
+					elif child == dyspnoea:
+
+						if node.option:
+
+							if child.option:
+								#P(C/d)=P(d)*P(d/C)
+								#P(A/B)=P(B)*P(B/A)
+								total = total + self.dgivenc * self.calc_marginal(dyspnoea)
+							else:
+
+								total = total + self.dgivennc * self.calc.marginal(dyspnoea)
+
+						else:
+
+							if child.option:
+
+								total = total + (1-self.dgivenc) * self.calc_marginal(dyspnoea)
+							else:
+
+								total = total + (1-self.dgivennc) * self.calc.marginal(dyspnoea)
+
+					else:
+						#xray
+						if node.option:
+
+							if child.option:
+
+								total = total + self.xgivenc * self.calc_marginal(xray)
+							else:
+
+								total = total + self.xgivennc * self.calc.marginal(xray)
+
+						else:
+
+							if child.option:
+
+								total = total + (1-self.xgivenc) * self.calc_marginal(xray)
+							else:
+
+								total = total + (1-self.xgivennc) * self.calc.marginal(xray)
+
+
+		#Given is not parent or child (independent)
+			if child_found is not True and parent_found is not True:
+				total = total + self.calc_marginal(node) * self.calc_marginal(item)
+
+		return total
 
 
 if __name__ == "__main__":
